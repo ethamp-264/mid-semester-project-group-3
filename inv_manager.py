@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st # type: ignore
 import json
 from pathlib import Path
 from datetime import datetime
@@ -28,7 +28,12 @@ else:
             "email": "admin@HEV.com",
             "password": "123",
             "role": "Admin",
-        }
+        },
+        {   "id": "2",
+            "email": "customer@HEV.com",
+            "password": "456",
+            "role": "Customer",
+            }
     ]
 
 st.title("Horizon Electric Vehicles")
@@ -74,7 +79,91 @@ if st.session_state["role"] == "Manager":
 elif st.session_state['role'] == "Customer":
     st.markdown("Customer Dashboard")
 
-    if st.button("Log out", type = "primary", use_container_width = True):
+    tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order","Previous Orders"])
+
+    with tab1:
+            st.subheader("Available Vehicles")
+
+            car_selection = st.selectbox("Cars for Sale:",
+                                     ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
+                                     help = "Select an item from the drop down menu",
+                                     key = "car_select")
+
+            if car_selection:
+                car = json_inv[car_selection]
+
+                st.markdown(f"### {car_selection}")
+                st.markdown(f"**Price:** ${car['price']:,}")
+                st.markdown(f"**Number of Batteries:** {car['batteries']}")
+
+                st.markdown("**Available Colors:**")
+                for color in car["colors"]:
+                    st.write(f"- {color}")
+
+    with tab2:
+            
+            col1, col2 = st.columns([3,2])
+    with col1:
+            order_selection = st.selectbox("Cars for Sale:",
+                                     ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
+                                     help = "Select an item from the drop down menu",
+                                     key = "order_select")
+            order_quantity = st.number_input("Quantity:", step = 1, key = "order_qty")
+            order_name = st.text_input("Name:", placeholder = "Ex. John", key = "cust_name")
+            order_btn = st.button("Place Order", disabled = False, use_container_width=True,type = "primary")
+            if order_btn:
+                if not order_name:
+                    st.warning("A name for the order must be provided!")
+                if order_quantity < 1:
+                    st.warning("Invalid quantity!")
+                else: 
+                    with st.spinner("Placing Order..."):
+                        time.sleep(2)
+                    
+                        item_search = order_selection
+                        quantity = order_quantity
+
+                        exists = False
+                        in_stock = False
+                        total_price = 0
+
+                        new_order_id_number = 101
+                        new_order_id = "Order_" + str(new_order_id_number)
+                        new_order_id_number += 1
+
+                        for inventory_item in inventory:
+                            if inventory_item["name"] == item_search:
+                                exists = True
+                                if inventory_item["stock"] >= quantity:
+                                    in_stock = True
+                                    inventory_item["stock"] = inventory_item["stock"] - quantity
+                                    total_price = inventory_item["price"] * quantity
+
+    with col2:
+        if order_btn: 
+            with st.container(border=True):
+                st.markdown("### Order Summary")
+                st.divider()
+
+                st.markdown(f"**Car:** {order_selection}")
+                st.markdown(f"**Quantity:** {order_quantity}")
+                st.markdown(f"**Total:** ${total_price:.2f}")
+                st.markdown(f"**Customer:** {order_name}")
+                st.divider()
+                st.caption("*Thank you valued customer!*")
+
+
+    with tab3:
+            pass
+
+
+    
+
+
+
+
+
+    if st.button("Log out", use_container_width = True):
         with st.spinner("Logging out..."):
             st.session_state["logged_in"] = False
             st.session_state["user"] = None
