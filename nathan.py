@@ -25,7 +25,7 @@ else:
     users = [
         {
             "id": "1",
-            "email": "manager@HEV.com",
+            "email": "Manager@HEV.com",
             "password": "123",
             "role": "Manager",
         },
@@ -58,7 +58,7 @@ if st.session_state["role"] == "Manager":
         st.markdown("Manager Dashboard")
 
         tab11, tab22, tab33, tab44 = st.tabs(["Inventory", "Update Inventory", "Order Management", "Delete Order"])
-#ADD CONTAINERS AROUND BOTH COLUMNS
+
         with tab11:
             with open(json_inv, "r") as f:
                 inventory = json.load(f)
@@ -87,14 +87,6 @@ if st.session_state["role"] == "Manager":
                     st.metric("Total WIP Stock", WIP_total)
                     st.metric("Total Product Stock", product_total)
 
-                if st.button("Log out", type = "primary", use_container_width = True):
-                    with st.spinner("Logging out..."):
-                        st.session_state["logged_in"] = False
-                        st.session_state["user"] = None
-                        st.session_state["role"] = None
-                        st.session_state["page"]= "login"
-                        time.sleep(2)
-                        st.rerun()
 
 
                 with col4:
@@ -138,6 +130,7 @@ if st.session_state["role"] == "Manager":
 
         with tab44:
             pass
+
 
 
 
@@ -234,7 +227,7 @@ elif st.session_state['role'] == "Customer":
             st.session_state["user"] = None
             st.session_state["role"] = None
             st.session_state["page"]= "login"
-            time.sleep(2)
+            time.sleep(4)
             st.rerun()
 
 
