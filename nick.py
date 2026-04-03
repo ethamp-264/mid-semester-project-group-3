@@ -7,6 +7,7 @@ import time
 
 json_users = Path("users.json")
 json_inv = Path("inventory.json")
+json_orders = Path("orders.json")
 
 if json_inv.exists():
     with open(json_inv, "r") as f:
@@ -15,6 +16,12 @@ else:
     #Default data if file doesn't exist
     inventory = []
 
+if json_orders.exists():
+    with open(json_inv, "r") as f:
+        Orders = json.load(f)
+else:
+    #Default data if file doesn't exist
+    Orders = []
 
 st.set_page_config(page_title = "Inventory Manager", layout = "centered")
 
@@ -148,6 +155,29 @@ elif st.session_state['role'] == "Customer":
                                     inventory_item["stock"] = inventory_item["stock"] - quantity
                                     total_price = inventory_item["price"] * quantity
 
+                        if in_stock:
+                            Orders.append(
+                                {
+                                    "Order_ID": new_order_id, 
+                                    "Customer": order_name, 
+                                    "Item": item_search, 
+                                    "Quantity": order_quantity,
+                                    "Total": total_price,
+                                    "Status": "Placed" 
+                                }
+                            )
+
+                            with json_orders.open("w", encoding = "utf-8") as f:
+                                    json.dump(Orders, f)
+
+                            with json_inv.open("w", encoding = "utf-8") as f:
+                                    json.dump(inventory, f)
+
+                                    st.success("Order Placed Successfully!") 
+                        else:
+                            print("Out of Stock")
+
+
     with col2:
         if order_btn: 
             with st.container(border=True):
@@ -163,7 +193,24 @@ elif st.session_state['role'] == "Customer":
 
 
     with tab3:
-            pass
+        with tab3:
+            st.subheader("Previous Orders")
+            st.divider()
+
+            if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
+                st.info("No orders have been placed yet.")
+            else:
+                order_number = 1
+
+                for order in st.session_state["orders"]:
+                    with st.container(border=True):
+                        st.markdown(f"### Order #{order_number}")
+                        st.markdown(f"**Car:** {order['car']}")
+                        st.markdown(f"**Quantity:** {order['quantity']}")
+                        st.markdown(f"**Total:** ${order['total']:.2f}")
+                        st.markdown(f"**Customer:** {order['customer']}")
+                    
+                    order_number = order_number + 1
 
 
     
