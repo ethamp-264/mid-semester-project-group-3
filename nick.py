@@ -87,6 +87,7 @@ elif st.session_state['role'] == "Customer":
     st.markdown("Customer Dashboard")
 
     tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order","Previous Orders"])
+
     with tab1:
         st.subheader("Car Information")
 
@@ -98,7 +99,7 @@ elif st.session_state['role'] == "Customer":
 
         selected_car = st.selectbox("Select a Car",
             car_names,
-            key="car_info_select"
+            key = "car_info_select"
         )
 
         for item in inventory:
@@ -117,9 +118,9 @@ elif st.session_state['role'] == "Customer":
                         st.markdown(f"- {color}")
 
     with tab2:
-            
-            col1, col2 = st.columns([3,2])
-    with col1:
+        col1, col2 = st.columns([3,2])
+
+        with col1:
             order_selection = st.selectbox("Cars for Sale:",
                                      ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
                                      help = "Select an item from the drop down menu",
@@ -178,39 +179,37 @@ elif st.session_state['role'] == "Customer":
                             print("Out of Stock")
 
 
-    with col2:
-        if order_btn: 
-            with st.container(border=True):
-                st.markdown("### Order Summary")
-                st.divider()
+        with col2:
+            if order_btn: 
+                with st.container(border=True):
+                    st.markdown("### Order Summary")
+                    st.divider()
 
-                st.markdown(f"**Car:** {order_selection}")
-                st.markdown(f"**Quantity:** {order_quantity}")
-                st.markdown(f"**Total:** ${total_price:.2f}")
-                st.markdown(f"**Customer:** {order_name}")
-                st.divider()
-                st.caption("*Thank you valued customer!*")
-
+                    st.markdown(f"**Car:** {order_selection}")
+                    st.markdown(f"**Quantity:** {order_quantity}")
+                    st.markdown(f"**Total:** ${total_price:.2f}")
+                    st.markdown(f"**Customer:** {order_name}")
+                    st.divider()
+                    st.caption("*Thank you valued customer!*")
 
     with tab3:
-        with tab3:
-            st.subheader("Previous Orders")
-            st.divider()
+        st.subheader("Previous Orders")
+        st.divider()
 
-            if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
-                st.info("No orders have been placed yet.")
-            else:
-                order_number = 1
+        if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
+            st.info("No orders have been placed yet.")
+        else:
+            order_number = 1
 
-                for order in st.session_state["orders"]:
-                    with st.container(border=True):
-                        st.markdown(f"### Order #{order_number}")
-                        st.markdown(f"**Car:** {order['car']}")
-                        st.markdown(f"**Quantity:** {order['quantity']}")
-                        st.markdown(f"**Total:** ${order['total']:.2f}")
-                        st.markdown(f"**Customer:** {order['customer']}")
+            for order in st.session_state["orders"]:
+                with st.container(border=True):
+                    st.markdown(f"### Order #{order_number}")
+                    st.markdown(f"**Car:** {order['car']}")
+                    st.markdown(f"**Quantity:** {order['quantity']}")
+                    st.markdown(f"**Total:** ${order['total']:.2f}")
+                    st.markdown(f"**Customer:** {order['customer']}")
                     
-                    order_number = order_number + 1
+                order_number = order_number + 1
 
 
     
