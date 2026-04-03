@@ -1,0 +1,8 @@
+[{"id": 1, "name": "Wheels", "type": "WIP", "price": 400, "stock": 156}, 
+{"id": 2, "name": "Engine", "type": "WIP", "price": 5000, "stock": 24}, 
+{"id": 3, "name": "Battery", "type": "WIP", "price": 1200, "stock": 58}, 
+{"id": 4, "name": "Frame", "type": "WIP", "price": 3000, "stock": 29}, 
+{"id": 5, "name": "Sedan", "colors": ["Black", "White", "Silver", "Blue"], "type": "Product", "price": 25000, "stock": 10, "wheels": 4, "engine": 1, "batteries": 1, "frame": 1}, 
+{"id": 6, "name": "Truck", "colors": ["Black", "White", "Gray", "Red"], "type": "Product", "price": 40000, "stock": 2, "wheels": 4, "engine": 1, "batteries": 2, "frame": 1}, 
+{"id": 7, "name": "SUV", "colors": ["Black", "White", "Silver", "Green"], "type": "Product", "price": 35000, "stock": 10, "wheels": 4, "engine": 1, "batteries": 1, "frame": 1}, 
+{"id": 8, "name": "Van", "colors": ["White", "Gray", "Blue"], "type": "Product", "price": 32000, "stock": 6, "wheels": 4, "engine": 1, "batteries": 1, "frame": 1}]
