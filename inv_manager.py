@@ -287,10 +287,69 @@ if st.session_state["role"] == "Manager":
 
 
         with tab33:
-            pass
+            st.subheader("Active Customer Orders")
+            
+            if json_orders.exists():
+                with open(json_orders, "r") as f:
+                    Orders = json.load(f)
+
+            if not Orders:
+                st.info("No orders currently in the system.")
+            else:
+                for index, order in enumerate(Orders):
+                    with st.container(border=True):
+                        col_info, col_action = st.columns([3, 1])
+                        
+                        with col_info:
+                            st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
+                            st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
+                            st.markdown(f"**Status:** `{order['Status']}`")
+                        
+                        with col_action:
+                            if order['Status'] == "Placed":
+                                if st.button(f"Mark Shipped", key=f"ship_{index}", use_container_width=True):
+                                    Orders[index]['Status'] = "Shipped"
+                                    
+                                    with open(json_orders, "w") as f:
+                                        json.dump(Orders, f)
+                                    
+                                    st.success("Order updated!")
+                                    time.sleep(1)
+                                    st.rerun()
+                            else:
+                                st.write("Task Complete")
 
         with tab44:
-            pass
+            st.subheader("Delete Orders")
+            st.warning("Caution: Deleting an order is permanent.")
+
+            if json_orders.exists():
+                with open(json_orders, "r") as f:
+                    current_orders = json.load(f)
+            else:
+                current_orders = []
+
+            if not current_orders:
+                st.info("No orders found to delete.")
+            else:
+                for index, order in enumerate(current_orders):
+                    with st.container(border=True):
+                        col_text, col_delete = st.columns([3, 1])
+                        
+                        with col_text:
+                            st.write(f"**{order['Order_ID']}** - {order['Customer']}")
+                            st.caption(f"{order['Item']} | Qty: {order['Quantity']}")
+                        
+                        with col_delete:
+                            if st.button("Delete", key=f"del_{index}", type="secondary", use_container_width=True):
+                                current_orders.pop(index)
+                                
+                                with open(json_orders, "w") as f:
+                                    json.dump(current_orders, f)
+                                
+                                st.error(f"Order deleted.")
+                                time.sleep(1)
+                                st.rerun()
 
 
 
