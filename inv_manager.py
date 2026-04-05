@@ -303,7 +303,11 @@ if st.session_state["role"] == "Manager":
                         with col_info:
                             st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
                             st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
-                            st.markdown(f"**Status:** `{order['Status']}`")
+                            status = order['Status']
+                            if status == "Placed":
+                                st.markdown(f"**Status:** :orange[{status}]")
+                            else:
+                                st.markdown(f"**Status:** :green[{status}]")
                         
                         with col_action:
                             if order['Status'] == "Placed":
@@ -341,15 +345,15 @@ if st.session_state["role"] == "Manager":
                             st.caption(f"{order['Item']} | Qty: {order['Quantity']}")
                         
                         with col_delete:
-                            if st.button("Delete", key=f"del_{index}", type="secondary", use_container_width=True):
-                                current_orders.pop(index)
-                                
-                                with open(json_orders, "w") as f:
-                                    json.dump(current_orders, f)
-                                
-                                st.error(f"Order deleted.")
-                                time.sleep(1)
-                                st.rerun()
+                            confirm_check = st.checkbox(f"Confirm delete {order['Order_ID']}", key=f"conf_{index}")
+                            if confirm_check:
+                                if st.button("Permanently Delete", key=f"del_{index}", type="primary", use_container_width=True):
+                                    current_orders.pop(index)
+                                    with open(json_orders, "w") as f:
+                                        json.dump(current_orders, f)
+                                    st.error("Order removed from system.")
+                                    time.sleep(1)
+                                    st.rerun()
 
 
 
@@ -551,7 +555,12 @@ else:
     st.dataframe(users)
 
 with st.sidebar:
-    st.markdown("Inventory Manager Sidebar")
-    if  st.session_state["logged_in"] == True:
-        user = st.session_state["user"]
-        st.markdown(f"Logged User Email: {user['email']}")
+    st.title("HEV Portal")
+    st.divider()
+    if st.session_state["logged_in"]:
+        st.subheader("User Profile")
+        st.info(f"**Role:** {st.session_state['role']}")
+        st.caption(f"Logged in as: {st.session_state['user']['email']}")
+        st.divider()
+    else:
+        st.warning("Please log in to continue")
