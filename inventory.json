@@ -1,3 +1,4 @@
+
 [   {"id": 1, "name": "Wheels", "type": "WIP", "price": 400, "stock": 160}, 
     {"id": 2, "name": "Engine", "type": "WIP", "price": 5000, "stock": 25}, 
     {"id": 3, "name": "Battery", "type": "WIP", "price": 1200, "stock": 60}, 

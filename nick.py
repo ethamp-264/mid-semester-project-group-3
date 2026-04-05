@@ -17,13 +17,13 @@ else:
     inventory = []
 
 if json_orders.exists():
-    with open(json_inv, "r") as f:
+    with open(json_orders, "r") as f:
         Orders = json.load(f)
 else:
     #Default data if file doesn't exist
     Orders = []
 
-st.set_page_config(page_title = "Inventory Manager", layout = "centered")
+st.set_page_config(page_title="Inventory Manager", layout="centered")
 
 if json_users.exists():
     with open(json_users, "r") as f:
@@ -36,16 +36,16 @@ else:
             "password": "123",
             "role": "Admin",
         },
-        {   "id": "2",
+        {
+            "id": "2",
             "email": "customer@HEV.com",
             "password": "456",
             "role": "Customer",
-            }
+        }
     ]
 
 st.title("Horizon Electric Vehicles")
 st.divider()
-
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
@@ -59,17 +59,17 @@ if "role" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
 
-
 if st.session_state["role"] == "Manager":
     if st.session_state["page"] == "home":
         st.markdown("Manager Dashboard")
-        if st.button("Go to Dashboard", key = "dashboard_view_btn", type = "primary", use_container_width = True):
+        if st.button("Go to Dashboard", key="dashboard_view_btn", type="primary", use_container_width=True):
             st.session_state["page"] = "dashboard"
             st.rerun()
+
     elif st.session_state["page"] == "dashboard":
         st.markdown("Dashboard")
 
-        tab1, tab2, tab3 = st.tabs(["View Assignments", "Add New Assignment","Update an Assignment"])
+        tab1, tab2, tab3 = st.tabs(["View Assignments", "Add New Assignment", "Update an Assignment"])
 
         with tab1:
             pass
@@ -80,13 +80,11 @@ if st.session_state["role"] == "Manager":
         with tab3:
             pass
 
-
-
-
-elif st.session_state['role'] == "Customer":
+elif st.session_state["role"] == "Customer":
     st.markdown("Customer Dashboard")
 
-    tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order","Previous Orders"])
+    tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order", "Previous Orders"])
+
     with tab1:
         st.subheader("Car Information")
 
@@ -96,14 +94,15 @@ elif st.session_state['role'] == "Customer":
             if item["type"] == "Product":
                 car_names.append(item["name"])
 
-        selected_car = st.selectbox("Select a Car",
+        selected_car = st.selectbox(
+            "Select a Car",
             car_names,
             key="car_info_select"
         )
 
         for item in inventory:
             if item["name"] == selected_car:
-                col5, col6 = st.columns([2,1])
+                col5, col6 = st.columns([2, 1])
 
                 with col5:
                     st.markdown(f"### {item['name']}")
@@ -117,135 +116,147 @@ elif st.session_state['role'] == "Customer":
                         st.markdown(f"- {color}")
 
     with tab2:
-            
-            col1, col2 = st.columns([3,2])
-    with col1:
-            order_selection = st.selectbox("Cars for Sale:",
-                                     ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
-                                     help = "Select an item from the drop down menu",
-                                     key = "order_select")
-            order_quantity = st.number_input("Quantity:", step = 1, key = "order_qty")
-            order_name = st.text_input("Name:", placeholder = "Ex. John", key = "cust_name")
-            order_btn = st.button("Place Order", disabled = False, use_container_width=True,type = "primary")
+        col1, col2 = st.columns([3, 2])
+
+        total_price = 0
+        in_stock = False
+        order_btn = False
+
+        with col1:
+            order_selection = st.selectbox(
+                "Cars for Sale:",
+                ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
+                help="Select an item from the drop down menu",
+                key="order_select"
+            )
+
+            order_quantity = st.number_input("Quantity:", step=1, key="order_qty")
+            order_name = st.text_input("Name:", placeholder="Ex. John", key="cust_name")
+            order_btn = st.button("Place Order", disabled=False, use_container_width=True, type="primary")
+
             if order_btn:
-                if not order_name:
+                if order_selection == "Select a Car":
+                    st.warning("Please select a car.")
+                elif not order_name:
                     st.warning("A name for the order must be provided!")
-                if order_quantity < 1:
+                elif order_quantity < 1:
                     st.warning("Invalid quantity!")
-                else: 
+                else:
                     with st.spinner("Placing Order..."):
                         time.sleep(2)
-                    
-                        item_search = order_selection
-                        quantity = order_quantity
 
                         exists = False
                         in_stock = False
                         total_price = 0
+                        found_item_id = None
 
-                        new_order_id_number = 101
+                        new_order_id_number = len(Orders) + 101
                         new_order_id = "Order_" + str(new_order_id_number)
-                        new_order_id_number += 1
 
                         for inventory_item in inventory:
-                            if inventory_item["name"] == item_search:
+                            if inventory_item["name"] == order_selection:
                                 exists = True
-                                if inventory_item["stock"] >= quantity:
+                                found_item_id = inventory_item["id"]
+
+                                if inventory_item["stock"] >= order_quantity:
                                     in_stock = True
-                                    inventory_item["stock"] = inventory_item["stock"] - quantity
-                                    total_price = inventory_item["price"] * quantity
+                                    inventory_item["stock"] = inventory_item["stock"] - order_quantity
+                                    total_price = inventory_item["price"] * order_quantity
+                                break
 
-                        if in_stock:
-                            Orders.append(
-                                {
-                                    "Order_ID": new_order_id, 
-                                    "Customer": order_name, 
-                                    "Item": item_search, 
-                                    "Quantity": order_quantity,
-                                    "Total": total_price,
-                                    "Status": "Placed" 
-                                }
-                            )
+                        if exists == False:
+                            st.error("Item not found.")
+                        else:
+                            if in_stock == True:
+                                Orders.append(
+                                    {
+                                        "Order ID": new_order_id,
+                                        "Customer": order_name,
+                                        "Customer Email": st.session_state["user"]["email"],
+                                        "Item ID": found_item_id,
+                                        "Quantity": order_quantity,
+                                        "Status": "Placed",
+                                        "Total": total_price
+                                    }
+                                )
 
-                            with json_orders.open("w", encoding = "utf-8") as f:
+                                with json_orders.open("w", encoding="utf-8") as f:
                                     json.dump(Orders, f)
 
-                            with json_inv.open("w", encoding = "utf-8") as f:
+                                with json_inv.open("w", encoding="utf-8") as f:
                                     json.dump(inventory, f)
 
-                                    st.success("Order Placed Successfully!") 
-                        else:
-                            print("Out of Stock")
+                                st.success("Order Placed Successfully!")
+                            else:
+                                st.error("Out of Stock")
 
-
-    with col2:
-        if order_btn: 
-            with st.container(border=True):
-                st.markdown("### Order Summary")
-                st.divider()
-
-                st.markdown(f"**Car:** {order_selection}")
-                st.markdown(f"**Quantity:** {order_quantity}")
-                st.markdown(f"**Total:** ${total_price:.2f}")
-                st.markdown(f"**Customer:** {order_name}")
-                st.divider()
-                st.caption("*Thank you valued customer!*")
-
+        with col2:
+            if order_btn and in_stock:
+                with st.container(border=True):
+                    st.markdown("### Order Summary")
+                    st.divider()
+                    st.markdown(f"**Car:** {order_selection}")
+                    st.markdown(f"**Quantity:** {order_quantity}")
+                    st.markdown(f"**Total:** ${total_price:.2f}")
+                    st.markdown(f"**Customer:** {order_name}")
+                    st.divider()
+                    st.caption("*Thank you valued customer!*")
 
     with tab3:
-        with tab3:
-            st.subheader("Previous Orders")
-            st.divider()
+        st.subheader("Previous Orders")
+        st.divider()
 
-            if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
-                st.info("No orders have been placed yet.")
-            else:
-                order_number = 1
+        current_user_email = st.session_state["user"]["email"]
 
-                for order in st.session_state["orders"]:
-                    with st.container(border=True):
-                        st.markdown(f"### Order #{order_number}")
-                        st.markdown(f"**Car:** {order['car']}")
-                        st.markdown(f"**Quantity:** {order['quantity']}")
-                        st.markdown(f"**Total:** ${order['total']:.2f}")
-                        st.markdown(f"**Customer:** {order['customer']}")
-                    
-                    order_number = order_number + 1
+        my_orders = []
+        for order in Orders:
+            if "Customer Email" in order:
+                if order["Customer Email"] == current_user_email:
+                    my_orders.append(order)
 
+        if my_orders == []:
+            st.info("You have not placed any orders yet.")
+        else:
+            for order in my_orders:
+                car_name = ""
 
-    
+                for item in inventory:
+                    if item["id"] == order["Item ID"]:
+                        car_name = item["name"]
 
+                with st.container(border=True):
+                    st.markdown(f"### {order['Order ID']}")
+                    st.markdown(f"**Customer:** {order['Customer']}")
+                    st.markdown(f"**Car:** {car_name}")
+                    st.markdown(f"**Quantity:** {order['Quantity']}")
+                    st.markdown(f"**Status:** {order['Status']}")
+                    st.markdown(f"**Total:** ${order['Total']}")
 
-
-
-
-    if st.button("Log out", use_container_width = True):
+    if st.button("Log out", use_container_width=True):
         with st.spinner("Logging out..."):
             st.session_state["logged_in"] = False
             st.session_state["user"] = None
             st.session_state["role"] = None
-            st.session_state["page"]= "login"
+            st.session_state["page"] = "login"
             time.sleep(4)
             st.rerun()
 
-
 else:
-    #Login
     st.subheader("Log In")
-    with st.container(border = True):
-        email_input = st.text_input("Email", key = "email_login")
-        password_input = st.text_input("Password", type = "password", key = "password_login")
-        
-        if st.button("Log In", type = "primary", use_container_width = True):
+    with st.container(border=True):
+        email_input = st.text_input("Email", key="email_login")
+        password_input = st.text_input("Password", type="password", key="password_login")
+
+        if st.button("Log In", type="primary", use_container_width=True):
             with st.spinner("Logging in..."):
                 time.sleep(2)
-                
+
                 found_user = None
                 for user in users:
                     if user["email"].strip().lower() == email_input.strip().lower() and user["password"] == password_input:
                         found_user = user
                         break
-                
+
                 if found_user:
                     st.success(f"Welcome back, {found_user['email']}!")
                     st.session_state["logged_in"] = True
@@ -258,16 +269,15 @@ else:
                 else:
                     st.error("Invalid credentials")
 
-    #Registration
     st.subheader("New Account")
-    with st.container(border = True):
-        new_email = st.text_input("Email", key = "email_register")
-        new_password = st.text_input("Password", type = "password", key = "password_edit")
-        role = st.radio("Role", ["Manager", "Customer"], horizontal = True)
-        
-        if st.button("Create Account", key = "register_btn"):
+    with st.container(border=True):
+        new_email = st.text_input("Email", key="email_register")
+        new_password = st.text_input("Password", type="password", key="password_edit")
+        role = st.radio("Role", ["Manager", "Customer"], horizontal=True)
+
+        if st.button("Create Account", key="register_btn"):
             with st.spinner("Creating account..."):
-                time.sleep(2) 
+                time.sleep(2)
 
                 users.append({
                     "id": str(uuid.uuid4()),
@@ -275,7 +285,7 @@ else:
                     "password": new_password,
                     "role": role
                 })
-                
+
                 with open(json_users, "w") as f:
                     json.dump(users, f)
 
@@ -287,6 +297,6 @@ else:
 
 with st.sidebar:
     st.markdown("Inventory Manager Sidebar")
-    if  st.session_state["logged_in"] == True:
+    if st.session_state["logged_in"] == True:
         user = st.session_state["user"]
         st.markdown(f"Logged User Email: {user['email']}")
