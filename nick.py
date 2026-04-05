@@ -83,8 +83,7 @@ if st.session_state["role"] == "Manager":
 elif st.session_state["role"] == "Customer":
     st.markdown("Customer Dashboard")
 
-    tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order", "Previous Orders"])
-
+    tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order","Previous Orders"])
     with tab1:
         st.subheader("Car Information")
 
@@ -97,7 +96,7 @@ elif st.session_state["role"] == "Customer":
         selected_car = st.selectbox(
             "Select a Car",
             car_names,
-            key="car_info_select"
+            key = "car_info_select"
         )
 
         for item in inventory:
@@ -116,24 +115,16 @@ elif st.session_state["role"] == "Customer":
                         st.markdown(f"- {color}")
 
     with tab2:
-        col1, col2 = st.columns([3, 2])
-
-        total_price = 0
-        in_stock = False
-        order_btn = False
-
-        with col1:
-            order_selection = st.selectbox(
-                "Cars for Sale:",
-                ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
-                help="Select an item from the drop down menu",
-                key="order_select"
-            )
-
-            order_quantity = st.number_input("Quantity:", step=1, key="order_qty")
-            order_name = st.text_input("Name:", placeholder="Ex. John", key="cust_name")
-            order_btn = st.button("Place Order", disabled=False, use_container_width=True, type="primary")
-
+            
+            col1, col2 = st.columns([3,2])
+    with col1:
+            order_selection = st.selectbox("Cars for Sale:",
+                                     ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
+                                     help = "Select an item from the drop down menu",
+                                     key = "order_select")
+            order_quantity = st.number_input("Quantity:", step = 1, key = "order_qty")
+            order_name = st.text_input("Name:", placeholder = "Ex. John", key = "cust_name")
+            order_btn = st.button("Place Order", disabled = False, use_container_width=True,type = "primary")
             if order_btn:
                 if order_selection == "Select a Car":
                     st.warning("Please select a car.")
@@ -190,47 +181,44 @@ elif st.session_state["role"] == "Customer":
                             else:
                                 st.error("Out of Stock")
 
-        with col2:
-            if order_btn and in_stock:
-                with st.container(border=True):
-                    st.markdown("### Order Summary")
-                    st.divider()
-                    st.markdown(f"**Car:** {order_selection}")
-                    st.markdown(f"**Quantity:** {order_quantity}")
-                    st.markdown(f"**Total:** ${total_price:.2f}")
-                    st.markdown(f"**Customer:** {order_name}")
-                    st.divider()
-                    st.caption("*Thank you valued customer!*")
+    with col2:
+        if order_btn: 
+            with st.container(border=True):
+                st.markdown("### Order Summary")
+                st.divider()
+
+                st.markdown(f"**Car:** {order_selection}")
+                st.markdown(f"**Quantity:** {order_quantity}")
+                st.markdown(f"**Total:** ${total_price:.2f}")
+                st.markdown(f"**Customer:** {order_name}")
+                st.divider()
+                st.caption("*Thank you valued customer!*")
 
     with tab3:
         st.subheader("Previous Orders")
         st.divider()
 
-        current_user_email = st.session_state["user"]["email"]
+            if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
+                st.info("No orders have been placed yet.")
+            else:
+                order_number = 1
 
-        my_orders = []
-        for order in Orders:
-            if "Customer Email" in order:
-                if order["Customer Email"] == current_user_email:
-                    my_orders.append(order)
+                for order in st.session_state["orders"]:
+                    with st.container(border=True):
+                        st.markdown(f"### Order #{order_number}")
+                        st.markdown(f"**Car:** {order['car']}")
+                        st.markdown(f"**Quantity:** {order['quantity']}")
+                        st.markdown(f"**Total:** ${order['total']:.2f}")
+                        st.markdown(f"**Customer:** {order['customer']}")
+                    
+                    order_number = order_number + 1
 
-        if my_orders == []:
-            st.info("You have not placed any orders yet.")
-        else:
-            for order in my_orders:
-                car_name = ""
 
-                for item in inventory:
-                    if item["id"] == order["Item ID"]:
-                        car_name = item["name"]
+    
 
-                with st.container(border=True):
-                    st.markdown(f"### {order['Order ID']}")
-                    st.markdown(f"**Customer:** {order['Customer']}")
-                    st.markdown(f"**Car:** {car_name}")
-                    st.markdown(f"**Quantity:** {order['Quantity']}")
-                    st.markdown(f"**Status:** {order['Status']}")
-                    st.markdown(f"**Total:** ${order['Total']}")
+
+
+
 
     if st.button("Log out", use_container_width=True):
         with st.spinner("Logging out..."):
