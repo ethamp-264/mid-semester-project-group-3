@@ -196,22 +196,28 @@ elif st.session_state["role"] == "Customer":
 
     with tab3:
         st.subheader("Previous Orders")
-        st.divider()
+            
+        if json_orders.exists():
+                with open(json_orders, "r") as f:
+                    Orders = json.load(f)
 
-            if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
-                st.info("No orders have been placed yet.")
-            else:
-                order_number = 1
-
-                for order in st.session_state["orders"]:
+        if not Orders:
+                st.info("You have not placed any orders yet.")
+        else:
+                for index, order in enumerate(Orders):
                     with st.container(border=True):
-                        st.markdown(f"### Order #{order_number}")
-                        st.markdown(f"**Car:** {order['car']}")
-                        st.markdown(f"**Quantity:** {order['quantity']}")
-                        st.markdown(f"**Total:** ${order['total']:.2f}")
-                        st.markdown(f"**Customer:** {order['customer']}")
-                    
-                    order_number = order_number + 1
+                        col_info, col_action = st.columns([3, 1])
+                        
+                        with col_info:
+                            st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
+                            st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
+                            status = order['Status']
+                            if status == "Placed":
+                                st.markdown(f"**Status:** :orange[{status}]")
+                            else:
+                                st.markdown(f"**Status:** :green[{status}]")
+                        
+    
 
 
     

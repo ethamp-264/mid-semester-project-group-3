@@ -276,7 +276,7 @@ if st.session_state["role"] == "Manager":
                                     st.rerun()
                     
             
-        if st.button("Log out", type = "primary", use_container_width = True, key = "restock_logout"):
+        if st.button("Log out", use_container_width = True, key = "restock_logout"):
                         with st.spinner("Logging out..."):
                             st.session_state["logged_in"] = False
                             st.session_state["user"] = None
@@ -357,45 +357,44 @@ if st.session_state["role"] == "Manager":
 
 
 
-elif st.session_state['role'] == "Customer":
+elif st.session_state["role"] == "Customer":
     st.markdown("Customer Dashboard")
 
     tab1, tab2, tab3 = st.tabs(["Car Information", "Place Order","Previous Orders"])
-
     with tab1:
         st.subheader("Car Information")
-        with st.container(border = True):
 
-            car_names = []
+        car_names = []
 
-            for item in inventory:
-                if item["type"] == "Product":
-                    car_names.append(item["name"])
+        for item in inventory:
+            if item["type"] == "Product":
+                car_names.append(item["name"])
 
-            selected_car = st.selectbox("Select a Car",
-                car_names,
-                key = "car_info_select"
-            )
+        selected_car = st.selectbox(
+            "Select a Car",
+            car_names,
+            key = "car_info_select"
+        )
 
-            for item in inventory:
-                if item["name"] == selected_car:
-                    col5, col6 = st.columns([2,1])
+        for item in inventory:
+            if item["name"] == selected_car:
+                col5, col6 = st.columns([2, 1])
 
-                    with col5:
-                        st.markdown(f"### {item['name']}")
-                        st.markdown(f"**Price:** ${item['price']}")
-                        st.markdown(f"**Stock:** {item['stock']}")
-                        st.markdown(f"**Batteries:** {item['batteries']}")
+                with col5:
+                    st.markdown(f"### {item['name']}")
+                    st.markdown(f"**Price:** ${item['price']}")
+                    st.markdown(f"**Stock:** {item['stock']}")
+                    st.markdown(f"**Batteries:** {item['batteries']}")
 
-                    with col6:
-                        st.markdown("**Colors:**")
-                        for color in item["colors"]:
-                            st.markdown(f"- {color}")
+                with col6:
+                    st.markdown("**Colors:**")
+                    for color in item["colors"]:
+                        st.markdown(f"- {color}")
 
     with tab2:
-        col1, col2 = st.columns([3,2])
-
-        with col1:
+            
+            col1, col2 = st.columns([3,2])
+    with col1:
             order_selection = st.selectbox("Cars for Sale:",
                                      ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
                                      help = "Select an item from the drop down menu",
@@ -404,91 +403,100 @@ elif st.session_state['role'] == "Customer":
             order_name = st.text_input("Name:", placeholder = "Ex. John", key = "cust_name")
             order_btn = st.button("Place Order", disabled = False, use_container_width=True,type = "primary")
             if order_btn:
-                if not order_name:
+                if order_selection == "Select a Car":
+                    st.warning("Please select a car.")
+                elif not order_name:
                     st.warning("A name for the order must be provided!")
-                if order_quantity < 1:
+                elif order_quantity < 1:
                     st.warning("Invalid quantity!")
-                else: 
+                else:
                     with st.spinner("Placing Order..."):
                         time.sleep(2)
-                    
-                        item_search = order_selection
-                        quantity = order_quantity
 
                         exists = False
                         in_stock = False
                         total_price = 0
+                        found_item_id = None
 
-                        new_order_id_number = 101
+                        new_order_id_number = len(Orders) + 101
                         new_order_id = "Order_" + str(new_order_id_number)
-                        new_order_id_number += 1
 
                         for inventory_item in inventory:
-                            if inventory_item["name"] == item_search:
+                            if inventory_item["name"] == order_selection:
                                 exists = True
-                                if inventory_item["stock"] >= quantity:
+                                found_item_id = inventory_item["id"]
+
+                                if inventory_item["stock"] >= order_quantity:
                                     in_stock = True
-                                    inventory_item["stock"] = inventory_item["stock"] - quantity
-                                    total_price = inventory_item["price"] * quantity
+                                    inventory_item["stock"] = inventory_item["stock"] - order_quantity
+                                    total_price = inventory_item["price"] * order_quantity
+                                break
 
-                        if in_stock:
-                            Orders.append(
-                                {
-                                    "Order_ID": new_order_id, 
-                                    "Customer": order_name, 
-                                    "Item": item_search, 
-                                    "Quantity": order_quantity,
-                                    "Total": total_price,
-                                    "Status": "Placed" 
-                                }
-                            )
+                        if exists == False:
+                            st.error("Item not found.")
+                        else:
+                            if in_stock == True:
+                                Orders.append(
+                                    {
+                                        "Order ID": new_order_id,
+                                        "Customer": order_name,
+                                        "Customer Email": st.session_state["user"]["email"],
+                                        "Item ID": found_item_id,
+                                        "Quantity": order_quantity,
+                                        "Status": "Placed",
+                                        "Total": total_price
+                                    }
+                                )
 
-                            with json_orders.open("w", encoding = "utf-8") as f:
+                                with json_orders.open("w", encoding="utf-8") as f:
                                     json.dump(Orders, f)
 
-                            with json_inv.open("w", encoding = "utf-8") as f:
+                                with json_inv.open("w", encoding="utf-8") as f:
                                     json.dump(inventory, f)
 
+                                st.success("Order Placed Successfully!")
+                            else:
+                                st.error("Out of Stock")
 
-                                    st.success("Order Placed Successfully!") 
-                        else:
-                            print("Out of Stock")
+    with col2:
+        if order_btn: 
+            with st.container(border=True):
+                st.markdown("### Order Summary")
+                st.divider()
 
-
-        with col2:
-            if order_btn: 
-                with st.container(border=True):
-                    st.markdown("### Order Summary")
-                    st.divider()
-
-                    st.markdown(f"**Car:** {order_selection}")
-                    st.markdown(f"**Quantity:** {order_quantity}")
-                    st.markdown(f"**Total:** ${total_price:.2f}")
-                    st.markdown(f"**Customer:** {order_name}")
-                    st.divider()
-                    st.caption("*Thank you valued customer!*")
+                st.markdown(f"**Car:** {order_selection}")
+                st.markdown(f"**Quantity:** {order_quantity}")
+                st.markdown(f"**Total:** ${total_price:.2f}")
+                st.markdown(f"**Customer:** {order_name}")
+                st.divider()
+                st.caption("*Thank you valued customer!*")
 
     with tab3:
         st.subheader("Previous Orders")
+            
+        if json_orders.exists():
+                with open(json_orders, "r") as f:
+                    Orders = json.load(f)
 
-        if "orders" not in st.session_state or len(st.session_state["orders"]) == 0:
-            st.info("No orders have been placed yet.")
+        if not Orders:
+                st.info("You have not placed any orders yet.")
         else:
-            st.divider()
-            order_number = 1
+                for index, order in enumerate(Orders):
+                    with st.container(border=True):
+                        col_info, col_action = st.columns([3, 1])
+                        
+                        with col_info:
+                            st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
+                            st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
+                            status = order['Status']
+                            if status == "Placed":
+                                st.markdown(f"**Status:** :orange[{status}]")
+                            else:
+                                st.markdown(f"**Status:** :green[{status}]")
 
-            for order in st.session_state["orders"]:
-                with st.container(border = True):
-                    st.markdown(f"### Order #{order_number}")
-                    st.markdown(f"**Car:** {order['car']}")
-                    st.markdown(f"**Quantity:** {order['quantity']}")
-                    st.markdown(f"**Total:** ${order['total']:.2f}")
-                    st.markdown(f"**Customer:** {order['customer']}")
-                    
-                order_number = order_number + 1
 
 
-    if st.button("Log out", type = "primary", use_container_width = True, key = "previous_orders_logout"):
+    if st.button("Log out", use_container_width = True, key = "previous_orders_logout"):
         with st.spinner("Logging out..."):
             st.session_state["logged_in"] = False
             st.session_state["user"] = None
