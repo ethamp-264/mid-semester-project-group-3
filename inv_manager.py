@@ -41,6 +41,11 @@ else:
             "email": "customer@HEV.com",
             "password": "456",
             "role": "Customer",
+            },
+        {   "id": "3",
+            "email": "customer2@HEV.com",
+            "password": "789",
+            "role": "Customer",
             }
     ]
 
@@ -438,13 +443,15 @@ elif st.session_state["role"] == "Customer":
                             if in_stock == True:
                                 Orders.append(
                                     {
-                                        "Order ID": new_order_id,
-                                        "Customer": order_name,
-                                        "Customer Email": st.session_state["user"]["email"],
-                                        "Item ID": found_item_id,
-                                        "Quantity": order_quantity,
-                                        "Status": "Placed",
-                                        "Total": total_price
+
+                                            "Order_ID": new_order_id,
+                                            "Customer": order_name,
+                                            "Customer Email": st.session_state["user"]["email"],
+                                            "Item": order_selection,
+                                            "Item ID": found_item_id,
+                                            "Quantity": order_quantity,
+                                            "Status": "Placed",
+                                            "Total": total_price
                                     }
                                 )
 
@@ -475,24 +482,33 @@ elif st.session_state["role"] == "Customer":
         st.subheader("Previous Orders")
             
         if json_orders.exists():
-                with open(json_orders, "r") as f:
-                    Orders = json.load(f)
-
-        if not Orders:
-                st.info("You have not placed any orders yet.")
+            with open(json_orders, "r") as f:
+                Orders = json.load(f)
         else:
-                for index, order in enumerate(Orders):
-                    with st.container(border=True):
-                        col_info, col_action = st.columns([3, 1])
-                        
-                        with col_info:
-                            st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
-                            st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
-                            status = order['Status']
-                            if status == "Placed":
-                                st.markdown(f"**Status:** :orange[{status}]")
-                            else:
-                                st.markdown(f"**Status:** :green[{status}]")
+            Orders = []
+
+        current_user_email = st.session_state["user"]["email"]
+
+        filtered_orders = []
+        for order in Orders:
+            if order.get("Customer Email") == current_user_email:
+                filtered_orders.append(order)
+
+        if not filtered_orders:
+            st.info("You have not placed any orders yet.")
+        else:
+            for index, order in enumerate(filtered_orders):
+                with st.container(border=True):
+                    col_info, col_action = st.columns([3, 1])
+                    
+                    with col_info:
+                        st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
+                        st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
+                        status = order['Status']
+                        if status == "Placed":
+                            st.markdown(f"**Status:** :orange[{status}]")
+                        else:
+                            st.markdown(f"**Status:** :green[{status}]")
 
 
 

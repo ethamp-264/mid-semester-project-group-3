@@ -1,1 +1,1 @@
-[{"Order_ID": "Order_101", "Customer": "Jeffrey", "Item": "Truck", "Quantity": 1, "Total": 40000, "Status": "Placed"}]
+[{"Order_ID": "Order_101", "Customer": "Jeffrey", "Customer Email": "customer@HEV.com", "Item": "Truck", "Item ID": 6, "Quantity": 1, "Status": "Placed", "Total": 40000}, {"Order_ID": "Order_102", "Customer": "Nick", "Customer Email": "customer2@HEV.com", "Item": "Sedan", "Item ID": 5, "Quantity": 1, "Status": "Placed", "Total": 25000}]
