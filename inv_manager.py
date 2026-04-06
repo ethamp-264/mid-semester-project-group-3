@@ -560,20 +560,31 @@ else:
         
         if st.button("Create Account", key = "register_btn"):
             with st.spinner("Creating account..."):
-                time.sleep(2) 
+                time.sleep(2)
 
-                users.append({
-                    "id": str(uuid.uuid4()),
-                    "email": new_email,
-                    "password": new_password,
-                    "role": role
-                })
+            for user in users:
+                    if user["email"].strip().lower() == new_email.strip().lower():
+                        email_exists = True
+                        break 
+                    else:
+                        with st.spinner("Creating account..."):
+                            time.sleep(2) 
+
+                            users.append({
+                                "id": str(uuid.uuid4()),
+                                "email": new_email,
+                                "password": new_password,
+                                "role": role
+                            })
+                            
+                            with open(json_users, "w") as f:
+                                json.dump(users, f)
+
+                            st.success("Account created!")
+                            st.rerun()
                 
-                with open(json_users, "w") as f:
-                    json.dump(users, f)
-
-                st.success("Account created!")
-                st.rerun()
+            if email_exists == True:
+                st.error("An account with this email already exists! Please log in above.")
 
     st.write("---")
     st.dataframe(users)
