@@ -33,7 +33,6 @@ def main():
         st.session_state["page"] = "login"
 
     # Get the parent directory where data files are stored
-    # The JSON files are in the parent directory of Final_Project_Phase_2
     data_dir = Path(__file__).parent.parent
     
     # Initialize data layer - passing the parent directory for data file access
@@ -46,7 +45,7 @@ def main():
     ui_manager = UIManager(business_service, data_manager)
     
     # Initialize the app
-    ui_manager.initialize_app()
+    ui_manager.initialize_session()
     
     # Route to appropriate page based on user role and login status
     if not st.session_state["logged_in"]:
