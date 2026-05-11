@@ -2,10 +2,16 @@ import os
 from pathlib import Path
 
 import streamlit as st
-from dotenv import load_dotenv
 
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
+
+
+if load_dotenv:
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 class AIChatAssistant:
