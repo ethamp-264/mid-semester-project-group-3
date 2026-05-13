@@ -440,14 +440,18 @@ class UIManager:
 
                     threshold = 5
                     for item in inventory:
-                        if item["stock"] < threshold:
-                            st.markdown(
-                                f"**{item['name']}** | Price: ${item['price']} | Stock: {item['stock']} | **LOW STOCK!**"
-                            )
-                        else:
-                            st.markdown(
-                                f"{item['name']} | Price: ${item['price']} | Stock: {item['stock']}"
-                            )
+                        # Get color list and format as a string
+                        colors_list = ", ".join(item.get("colors", []))
+                        color_info = f" | Colors: {colors_list}" if colors_list else ""
+    
+                    if item["stock"] < threshold:
+                        st.markdown(
+                        f"**{item['name']}** | Price: ${item['price']} | Stock: {item['stock']}{color_info} | **LOW STOCK!**"
+        )
+                    else:
+                        st.markdown(
+                        f"{item['name']} | Price: ${item['price']} | Stock: {item['stock']}{color_info}"
+        )
 
     def render_update_inventory_tab(self) -> None:
         """
