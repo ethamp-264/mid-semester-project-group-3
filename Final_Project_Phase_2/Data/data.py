@@ -191,18 +191,21 @@ class DataManager:
         return [
             {
                 "id": "1",
+                "name": "Manager",
                 "email": "manager@HEV.com",
                 "password": "123",
                 "role": "Manager",
             },
             {
                 "id": "2",
+                "name": "Jeffrey",
                 "email": "customer@HEV.com",
                 "password": "456",
                 "role": "Customer",
             },
             {
                 "id": "3",
+                "name": "Nick",
                 "email": "customer2@HEV.com",
                 "password": "789",
                 "role": "Customer",

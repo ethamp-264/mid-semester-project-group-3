@@ -68,6 +68,32 @@ class UIManager:
         if "page" not in st.session_state:
             st.session_state["page"] = "login"
 
+    def get_current_user_name(self) -> str:
+        """
+        Return the current user's saved name with an email-based fallback.
+        """
+        user = st.session_state.get("user") or {}
+        name = user.get("name", "").strip()
+        if name:
+            return name
+
+        email = user.get("email", "")
+        return email.split("@")[0] if email else ""
+
+    def format_order_status(self, status: str) -> str:
+        """
+        Format order statuses consistently across manager and customer views.
+        """
+        status_colors = {
+            "Placed": "orange",
+            "Shipped": "green",
+            "Completed": "green",
+            "Cancelled": "red",
+            "Deleted": "gray",
+        }
+        color = status_colors.get(status, "gray")
+        return f":{color}[{status}]"
+
     def render_login_page(self) -> Optional[str]:
         """
         Render login and registration page. Handles logic for auth and account creation.
@@ -109,12 +135,22 @@ class UIManager:
         Component for new user registration.
         """
         with st.container(border=True):
+            new_name = st.text_input("Name", key="name_register")
             new_email = st.text_input("Email", key="email_register")
             new_password = st.text_input("Password", type="password", key="password_register")
             role = st.radio("Role", ["Manager", "Customer"], horizontal=True)
 
             if st.button("Create Account", key="register_btn", use_container_width=True):
-                user_data = {"email": new_email, "password": new_password, "role": role}
+                if not new_name.strip() or not new_email.strip() or not new_password:
+                    st.error("Name, email, and password are required.")
+                    return
+
+                user_data = {
+                    "name": new_name,
+                    "email": new_email,
+                    "password": new_password,
+                    "role": role
+                }
                 if self.business_service.register_user(user_data):
                     st.success("Account created!")
                     time.sleep(1)
@@ -130,10 +166,14 @@ class UIManager:
         
         inventory = self.data_manager.load_inventory()
         orders = self.data_manager.load_orders()
+        active_orders = [
+            order for order in orders
+            if order.get("Status", "Placed") == "Placed"
+        ]
         
         m1, m2 = st.columns(2)
         m1.metric("Stock Volume", sum(i["stock"] for i in inventory))
-        m2.metric("Active Orders", len(orders))
+        m2.metric("Active Orders", len(active_orders))
 
         st.divider()
 
@@ -159,7 +199,7 @@ class UIManager:
             st.divider()
             st.subheader("User Profile")
             st.info(f"**Role:** {st.session_state['role']}")
-            st.caption(f"Welcome back {st.session_state['user']['email']}!")
+            st.caption(f"Welcome back {self.get_current_user_name()}!")
             st.divider()
             if st.button("Log out", use_container_width=True):
                 st.session_state.clear()
@@ -189,7 +229,7 @@ class UIManager:
             st.divider()
             st.subheader("User Profile")
             st.info(f"**Role:** {st.session_state['role']}")
-            st.caption(f"Welcome back {st.session_state['user']['email']}!")
+            st.caption(f"Welcome back {self.get_current_user_name()}!")
             st.divider()
             if st.button("Log out", use_container_width=True):
                 st.session_state.clear()
@@ -218,31 +258,62 @@ class UIManager:
                     
                     with col_info:
                         st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
-                        st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
-                        status = order['Status']
+                        color_text = f" | **Color:** {order.get('Color')}" if order.get("Color") else ""
+                        st.markdown(
+                            f"**Item:** {order['Item']}{color_text} | "
+                            f"**Qty:** {order['Quantity']} | **Total:** ${order['Total']}"
+                        )
+                        status = order.get("Status", "Placed")
+                        st.markdown(f"**Status:** {self.format_order_status(status)}")
+
+                    with col_action:
                         if status == "Placed":
-                            st.markdown(f"**Status:** :orange[{status}]")
+                            if st.button("Cancel Order", key=f"cancel_{index}", use_container_width=True):
+                                success, message = self.business_service.cancel_order(
+                                    order["Order_ID"],
+                                    current_user_email
+                                )
+                                if success:
+                                    st.success(message)
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    st.error(message)
+                        elif status in {"Shipped", "Completed"}:
+                            st.write("Completed")
                         else:
-                            st.markdown(f"**Status:** :green[{status}]")
+                            st.write("No action")
 
     def render_place_order_tab(self) -> None:
         """
         Render order placement form with summary.
         """
         col1, col2 = st.columns([3, 2])
+        inventory = self.data_manager.load_inventory()
+        car_names = [
+            item["name"] for item in inventory
+            if item.get("type") == "Product"
+        ]
         
         with col1:
             order_selection = st.selectbox("Cars for Sale:",
-                                         ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
+                                         ["Select a Car"] + car_names,
                                          help="Select an item from the drop down menu",
                                          key="order_select")
-            order_quantity = st.number_input("Quantity:", step=1, key="order_qty")
-            order_name = st.text_input("Name:", placeholder="Ex. John", key="cust_name")
+
+            available_colors = self.business_service.get_available_colors(order_selection)
+            color_options = ["Select a Color"] + available_colors
+            selected_color = st.selectbox("Color:", color_options, key="order_color")
+            order_quantity = st.number_input("Quantity:", step=1, min_value=1, key="order_qty")
+            order_name = self.get_current_user_name()
+            st.text_input("Name:", value=order_name, key="cust_name", disabled=True)
             order_btn = st.button("Place Order", disabled=False, use_container_width=True, type="primary")
             
             if order_btn:
                 if order_selection == "Select a Car":
                     st.warning("Please select a car.")
+                elif selected_color == "Select a Color":
+                    st.warning("Please select a color.")
                 elif not order_name:
                     st.warning("A name for the order must be provided!")
                 elif order_quantity < 1:
@@ -255,7 +326,8 @@ class UIManager:
                         "item": order_selection,
                         "quantity": order_quantity,
                         "customer_name": order_name,
-                        "customer_email": st.session_state["user"]["email"]
+                        "customer_email": st.session_state["user"]["email"],
+                        "color": selected_color
                     }
                     success, result = self.business_service.place_order(order_data)
                     
@@ -263,7 +335,7 @@ class UIManager:
                         st.success("Order Placed Successfully!")
                         # Store order details for summary
                         st.session_state["last_order"] = result
-                        st.session_state["last_order_total"] = self.business_service.calculate_order_total(order_selection, order_quantity)
+                        st.session_state["last_order_total"] = result["Total"]
                     else:
                         st.error(result.get("error", "Failed to place order"))
 
@@ -274,6 +346,7 @@ class UIManager:
                     st.divider()
 
                     st.markdown(f"**Car:** {st.session_state['last_order']['Item']}")
+                    st.markdown(f"**Color:** {st.session_state['last_order'].get('Color')}")
                     st.markdown(f"**Quantity:** {st.session_state['last_order']['Quantity']}")
                     st.markdown(f"**Total:** ${st.session_state['last_order_total']:.2f}")
                     st.markdown(f"**Customer:** {st.session_state['last_order']['Customer']}")
@@ -452,42 +525,44 @@ class UIManager:
         st.subheader("Active Customer Orders")
         
         orders = self.data_manager.load_orders()
+        active_orders = [
+            order for order in orders
+            if order.get("Status", "Placed") == "Placed"
+        ]
 
-        if not orders:
+        if not active_orders:
             st.info("No orders currently in the system.")
         else:
-            for index, order in enumerate(orders):
+            for index, order in enumerate(active_orders):
                 with st.container(border=True):
                     col_info, col_action = st.columns([3, 1])
                     
                     with col_info:
                         st.markdown(f"**Order ID:** {order['Order_ID']} | **Customer:** {order['Customer']}")
-                        st.markdown(f"**Item:** {order['Item']} | **Qty:** {order['Quantity']} | **Total:** ${order['Total']}")
-                        status = order['Status']
-                        if status == "Placed":
-                            st.markdown(f"**Status:** :orange[{status}]")
-                        else:
-                            st.markdown(f"**Status:** :green[{status}]")
+                        color_text = f" | **Color:** {order.get('Color')}" if order.get("Color") else ""
+                        st.markdown(
+                            f"**Item:** {order['Item']}{color_text} | "
+                            f"**Qty:** {order['Quantity']} | **Total:** ${order['Total']}"
+                        )
+                        status = order.get("Status", "Placed")
+                        st.markdown(f"**Status:** {self.format_order_status(status)}")
                     
                     with col_action:
-                        if order['Status'] == "Placed":
-                            if st.button(f"Mark Shipped", key=f"ship_{index}", use_container_width=True):
-                                success = self.business_service.update_order_status(order['Order_ID'], "Shipped")
-                                if success:
-                                    st.success("Order updated!")
-                                    time.sleep(1)
-                                    st.rerun()
-                                else:
-                                    st.error("Failed to update order.")
-                        else:
-                            st.write("Task Complete")
+                        if st.button(f"Mark Shipped", key=f"ship_{index}", use_container_width=True):
+                            success = self.business_service.update_order_status(order['Order_ID'], "Shipped")
+                            if success:
+                                st.success("Order updated!")
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.error("Failed to update order.")
 
     def render_delete_order_tab(self) -> None:
         """
         Render order deletion interface.
         """
         st.subheader("Delete Orders")
-        st.warning("Caution: Deleting an order is permanent.")
+        st.info("Deleting an order marks it as Deleted while keeping the order record.")
 
         orders = self.data_manager.load_orders()
 
@@ -500,19 +575,27 @@ class UIManager:
                     
                     with col_text:
                         st.write(f"**{order['Order_ID']}** - {order['Customer']}")
-                        st.caption(f"{order['Item']} | Qty: {order['Quantity']}")
+                        color_text = f" | Color: {order.get('Color')}" if order.get("Color") else ""
+                        st.caption(f"{order['Item']}{color_text} | Qty: {order['Quantity']}")
+                        st.markdown(f"**Status:** {self.format_order_status(order.get('Status', 'Placed'))}")
                     
                     with col_delete:
-                        confirm_check = st.checkbox(f"Confirm delete {order['Order_ID']}", key=f"conf_{index}")
-                        if confirm_check:
-                            if st.button("Permanently Delete", key=f"del_{index}", type="primary", use_container_width=True):
-                                success = self.business_service.delete_order(order['Order_ID'])
-                                if success:
-                                    st.error("Order removed from system.")
-                                    time.sleep(1)
-                                    st.rerun()
-                                else:
-                                    st.error("Failed to delete order.")
+                        status = order.get("Status", "Placed")
+                        if status in {"Shipped", "Completed"}:
+                            st.write("Cannot delete completed orders")
+                        elif status == "Deleted":
+                            st.write("Already deleted")
+                        else:
+                            confirm_check = st.checkbox(f"Confirm delete {order['Order_ID']}", key=f"conf_{index}")
+                            if confirm_check:
+                                if st.button("Mark Deleted", key=f"del_{index}", type="primary", use_container_width=True):
+                                    success, message = self.business_service.soft_delete_order(order['Order_ID'])
+                                    if success:
+                                        st.success(message)
+                                        time.sleep(1)
+                                        st.rerun()
+                                    else:
+                                        st.error(message)
 
     def render_ai_assistant_tab(self) -> None:
         """
