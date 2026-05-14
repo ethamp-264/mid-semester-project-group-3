@@ -292,7 +292,7 @@ class UIManager:
         inventory = self.data_manager.load_inventory()
         car_names = [
             item["name"] for item in inventory
-            if item.get("type") == "Product"
+            if item.get("type", "").lower() == "product"
         ]
         
         with col1:
@@ -438,20 +438,22 @@ class UIManager:
                 else:
                     st.markdown("### All Inventory Items")
 
-                    threshold = 5
-                    for item in inventory:
-                        # Get color list and format as a string
-                        colors_list = ", ".join(item.get("colors", []))
-                        color_info = f" | Colors: {colors_list}" if colors_list else ""
+            threshold = 5
+            for item in inventory:
+                    # Check for 'product' regardless of capitalization
+                is_product = item.get("type", "").lower() == "product"
     
+                if is_product:
+                    colors_list = item.get("colors", [])
+                    color_display = f" | Colors: {', '.join(colors_list)}" if colors_list else ""
+        
                     if item["stock"] < threshold:
-                        st.markdown(
-                        f"**{item['name']}** | Price: ${item['price']} | Stock: {item['stock']}{color_info} | **LOW STOCK!**"
-        )
+                            st.markdown(f"**{item['name']}** | Price: ${item['price']} | Stock: {item['stock']}{color_display} | **LOW STOCK!**")
                     else:
-                        st.markdown(
-                        f"{item['name']} | Price: ${item['price']} | Stock: {item['stock']}{color_info}"
-        )
+                        st.markdown(f"{item['name']} | Price: ${item['price']} | Stock: {item['stock']}{color_display}")
+                else:
+                    # This handles WIP parts like Wheels, Engines, etc.
+                    st.markdown(f"{item['name']} | Stock: {item['stock']} (WIP Part)")
 
     def render_update_inventory_tab(self) -> None:
         """
@@ -497,6 +499,13 @@ class UIManager:
                                                      ["Select a Car", "Sedan", "Truck", "SUV", "Van"],
                                                      key="assemble_select")
                 
+                available_colors = []
+                if car_assemble_selection != "Select a Car":
+                    available_colors = self.business_service.get_available_colors(car_assemble_selection)
+        
+                color_options = ["Select a Color"] + available_colors
+                selected_assemble_color = st.selectbox("Assembly Color:", color_options, key="assemble_color")
+
                 assemble_qty = st.number_input("Quantity to Assemble:", 
                                                step=1, 
                                                min_value=1, 

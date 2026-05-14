@@ -4,6 +4,8 @@ Service Layer - Contains business logic and application workflows
 
 from typing import Dict, List, Any, Tuple
 import uuid
+
+from streamlit import success
 from Data.data import DataManager
 
 
@@ -105,7 +107,7 @@ class BusinessService:
 
         return False
 
-    def assemble_car(self, car_type: str, quantity: int) -> Tuple[bool, str]:
+    def assemble_car(self, car_type: str, quantity: int, color: str = None) -> Tuple[bool, str]:
         """
         Assemble cars by consuming required parts from inventory.
 
@@ -163,8 +165,8 @@ class BusinessService:
         # Add assembled cars to inventory
         car_item["stock"] += quantity
 
-        success = self.data_manager.save_inventory(self.inventory)
-        message = f"Successfully assembled {quantity} {car_type}(s)!" if success else "Failed to save inventory"
+        color_msg = f" in {color}" if color else ""
+        message = f"Successfully assembled {quantity} {car_type}(s){color_msg}!" if success else "Failed to save inventory"
         return success, message
 
     def check_assembly_requirements(self, car_type: str, quantity: int) -> Dict[str, Any]:
